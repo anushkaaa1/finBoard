@@ -14,6 +14,8 @@ export default function Budgets() {
       return acc;
     }, {});
   const categories = Object.keys(spending || {});
+
+
   return transactions && categories.length > 0 ? (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
       {categories.map((category) => (
@@ -32,7 +34,9 @@ export default function Budgets() {
               className="retro-input p-3 w-full"
               value={budgets[category] || ""}
               onChange={(e) =>
-                setBudgets({ ...budgets, [category]: Number(e.target.value) })
+                setBudgets(
+                  Number(e.target.value) >=0? {...budgets, [category]: Number(e.target.value), }: budgets
+                )
               }
             />
             {budgets[category] && (
