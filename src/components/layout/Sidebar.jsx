@@ -68,11 +68,11 @@ export default function Sidebar() {
         
         {/* Portfolio Link - Opens in a new tab */}
         <a 
-          href="#" 
+          href="https://www.linkedin.com/in/irfankhan1855/" 
           target="_blank" 
           rel="noopener noreferrer" 
           className="text-gray-400 hover:text-[#FF6B00] transition-colors hover:scale-110"
-          title="Portfolio"
+          title="LinkedIn"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
