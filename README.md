@@ -1,58 +1,111 @@
+<div align="left">
+
+# FINBOARD
+
+A retro-styled, interactive personal finance dashboard to manage budgets, visualize transactions, and keep track of your spending securely in your browser.
+
+</div>
+
 <p align="center">
-  <img src="src/assets/finb.gif" alt="Finboard Logo" width="150" style="border-radius: 20px;" />
+  <img width="1740" height="1011" alt="FinBoard Preview" src="https://github.com/user-attachments/assets/52fd99d8-7df9-41b0-bc31-65bb7fe09edd" />
 </p>
 
-<h1 align="center">FINBOARD</h1>
 
-<p align="center">
-  A retro-styled, interactive personal finance dashboard to manage budgets, visualize transactions, and keep track of your spending securely in your browser.
-</p>
+---
 
 ## ✨ Features
 
-- **📊 Interactive Dashboard:** Visualize your income and expenses over time using dynamic Recharts.
-- **💰 Budget Management:** Set limits on different spending categories and track your progress.
-- **📜 Transaction History:** View, filter, and categorize your transactions in a sleek retro table.
-- **📁 Secure Data Upload:** Load your financial data locally. No backend needed—your data stays in your browser!
-- **💻 Retro Aesthetic:** Designed with a smooth dark grid terminal theme, bringing a nostalgic but modern feel.
+<table>
+<tr>
+
+<td width="60%">
+
+📊 **Interactive Dashboard**  
+Visualize income and expenses using dynamic Recharts.
+
+💰 **Budget Management**  
+Set spending limits and monitor progress.
+
+📜 **Transaction History**  
+View, filter, and categorize transactions.
+
+📁 **Secure Local Data**  
+No backend needed — your financial data stays in your browser.
+
+💻 **Retro UI Design**  
+Dark grid terminal aesthetic with a nostalgic modern feel.
+
+</td>
+
+<td width="40%" align="center">
+
+<img src="src/assets/finb.gif" alt="FinBoard Demo" width="260"/>
+
+</td>
+
+</tr>
+</table>
+
+---
 
 ## 🚀 Tech Stack
 
-- **Frontend:** React, React Router
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS, DaisyUI
-- **Charts:** Recharts
-- **Icons Elements:** Lucide / Custom SVGs
+| Category | Tech |
+|-----------|-------|
+| Frontend | React, React Router |
+| Build Tool | Vite |
+| Styling | Tailwind CSS, DaisyUI |
+| Charts | Recharts |
+| Icons | Lucide Icons, Custom SVG |
+
+---
 
 ## 🛠️ Getting Started
 
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) installed.
+
+Install Node.js before starting:
+
+https://nodejs.org/
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/khanirfan18/finBoard.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd finboard
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+1. Clone repository
+
+```bash
+git clone https://github.com/khanirfan18/finBoard.git
+```
+
+2. Enter project folder
+
+```bash
+cd finBoard
+```
+
+3. Install packages
+
+```bash
+npm install
+```
+
+4. Start development server
+
+```bash
+npm run dev
+```
+
+---
 
 ## 🤝 Contributing
 
-**Planning to contribute?** 
-Your efforts are highly appreciated! Please take a moment to check the [Contributing Guide](CONTRIBUTING.md) before you get started. It outlines the professional workflow for opening valid issues, claiming tasks correctly, and submitting Pull Requests.
+Planning to contribute?
 
+Your contributions are appreciated. Please read `CONTRIBUTING.md` before opening issues or submitting pull requests.
 
+It covers:
 
+- Valid issue creation
+- Task claiming workflow
+- Pull request guidelines
 
+Happy building 🚀
