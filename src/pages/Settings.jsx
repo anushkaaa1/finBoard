@@ -3,7 +3,15 @@ import Papa from "papaparse";
 import { DataContext, CURRENCIES } from "../context/AppContext";
 import { demoData } from "../data/demoData";
 import { format } from "date-fns";
-
+const categoryIcons = {
+  Food: "🍔",
+  Travel: "✈️",
+  Shopping: "🛒",
+  Salary: "💰",
+  Bills: "📄",
+  Entertainment: "🎬",
+  Health: "🏥",
+};
 export default function CSVParser() {
   const {
     transactions,

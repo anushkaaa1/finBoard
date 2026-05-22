@@ -3,7 +3,15 @@ import { Link } from "react-router-dom";
 import { DataContext } from "../context/AppContext";
 import categorize from "../components/utils/categorize";
 import { parse } from "date-fns";
-
+const categoryIcons = {
+  FOOD: "🍔",
+  TRANSPORT: "✈️",
+  SHOPPING: "🛒",
+  INCOME: "💰",
+  BILLS: "📄",
+  HEALTH: "🏥",
+  OTHER: "📌",
+};
 export default function Transaction() {
   const { transactions, currency } = React.useContext(DataContext);
   
@@ -274,11 +282,14 @@ export default function Transaction() {
                 <td className={`py-4 px-6 font-black text-right whitespace-nowrap ${Number(data.Amount) > 0 ? 'text-[#00C49F]' : 'text-white'}`}>
                   {Number(data.Amount) > 0 ? '+' : ''}{currency.symbol}{Math.abs(Number(data.Amount)).toLocaleString()}
                 </td>
-                <td className="py-4 px-6">
-                  <span className="bg-[#1F1F1F] text-gray-300 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-sm border border-[#2a2a2a]">
-                    {categorize(data.Description)}
-                  </span>
-                </td>
+               <td className="py-4 px-6">
+  <span className="bg-[#1F1F1F] text-gray-300 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-sm border border-[#2a2a2a] flex items-center gap-2 w-fit">
+    <span>
+      {categoryIcons[categorize(data.Description)] || "📌"}
+    </span>
+    {categorize(data.Description)}
+  </span>
+</td>
               </tr>
             ))}
           </tbody>
