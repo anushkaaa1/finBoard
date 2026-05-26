@@ -22,6 +22,18 @@ export default function Transaction() {
   const [sortBy, setSortBy] = React.useState("date-desc");
   const [minAmount, setMinAmount] = React.useState("");
   const [maxAmount, setMaxAmount] = React.useState("");
+  const [voiceSupported, setVoiceSupported] = React.useState(false);
+  const [isListening, setIsListening] = React.useState(false);
+  const [voiceMessage, setVoiceMessage] = React.useState("");
+
+  React.useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition ||
+      window.mozSpeechRecognition ||
+      window.msSpeechRecognition;
+    setVoiceSupported(Boolean(SpeechRecognition));
+  }, []);
 
   // Get unique categories
   const allCategories = React.useMemo(() => {
@@ -150,6 +162,235 @@ export default function Transaction() {
     setMaxAmount("");
   };
 
+  const parseVoiceNumber = (text) => {
+    const match = text.match(/(\d+(?:,\d{3})*(?:\.\d+)?)/);
+    return match ? Number(match[1].replace(/,/g, "")) : null;
+  };
+
+  const parseVoiceTransactionCommand = (transcript) => {
+    const cleanedTranscript = transcript
+      .toLowerCase()
+      .trim()
+      .replace(/[.?!]+$/g, "")
+      .replace(/\s+/g, " ");
+
+    const normalized = cleanedTranscript;
+
+    // Check sort commands FIRST (before date checks)
+    if (/sort.*(amount|price)|amount.*sort|high to low|low to high|highest|lowest/.test(normalized)) {
+      if (/low|ascending|asc|least|smallest|minimum/.test(normalized)) {
+        return { action: "setSortBy", payload: "amount-asc" };
+      }
+      return { action: "setSortBy", payload: "amount-desc" };
+    }
+
+    if (/sort.*(date|recent|newest|oldest)|date.*sort|recent first|newest first|oldest first/.test(normalized)) {
+      if (/oldest|ascending|asc/.test(normalized)) {
+        return { action: "setSortBy", payload: "date-asc" };
+      }
+      return { action: "setSortBy", payload: "date-desc" };
+    }
+
+    if (/sort.*(category|alphabetical)|category.*sort|alphabetical|a to z|z to a/.test(normalized)) {
+      return { action: "setSortBy", payload: "category" };
+    }
+
+    // Now check for time period / date preset commands
+    const dateMap = {
+      "today": "today",
+      "yesterday": "yesterday",
+      "this week": "this-week",
+      "last week": "last-week",
+      "this month": "this-month",
+      "last month": "last-month",
+      "last 3 months": "last-3-months",
+      "last three months": "last-3-months",
+      "three months": "last-3-months",
+      "this year": "this-year",
+      "all time": "all",
+      "all": "all",
+    };
+
+    for (const phrase in dateMap) {
+      if (normalized.includes(phrase)) {
+        return { action: "setDatePreset", payload: dateMap[phrase] };
+      }
+    }
+
+    if (/clear filters|reset filters|show all|remove filters|clear search/.test(normalized)) {
+      return { action: "clearFilters" };
+    }
+
+    if (/export|download|csv/.test(normalized)) {
+      return { action: "export" };
+    }
+
+    const categoryMatch = allCategories.find((category) => normalized.includes(category.toLowerCase()));
+    if (categoryMatch && /show|filter|category|transactions|spend|spent|expenses|income|shopping|food|transport|bills|health/.test(normalized)) {
+      return { action: "setCategory", payload: categoryMatch };
+    }
+
+    const searchMatch = normalized.match(/(?:search for|find|show|filter by|look for)\s+(.+)/);
+    if (searchMatch) {
+      const value = searchMatch[1].trim();
+      if (value) {
+        return { action: "setSearchTerm", payload: value };
+      }
+    }
+
+    if (/min|minimum|at least|amount over|greater than/.test(normalized)) {
+      const value = parseVoiceNumber(normalized);
+      if (value !== null) {
+        return { action: "setMinAmount", payload: value };
+      }
+    }
+
+    if (/max|maximum|at most|less than|below/.test(normalized)) {
+      const value = parseVoiceNumber(normalized);
+      if (value !== null) {
+        return { action: "setMaxAmount", payload: value };
+      }
+    }
+
+    return { action: "setSearchTerm", payload: normalized };
+  };
+
+  const handleTransactionVoiceTranscript = (transcript) => {
+    const command = parseVoiceTransactionCommand(transcript);
+
+    switch (command.action) {
+      case "setDatePreset":
+        setDatePreset(command.payload);
+        setVoiceMessage(`Date filter set to ${command.payload.replace(/-/g, " ")}`);
+        break;
+      case "clearFilters":
+        clearFilters();
+        setVoiceMessage("Filters cleared");
+        break;
+      case "export":
+        exportToCSV();
+        setVoiceMessage("Exporting CSV");
+        break;
+      case "setSortBy":
+        setSortBy(command.payload);
+        setVoiceMessage(`Sorting by ${command.payload.replace(/-/g, " ")}`);
+        break;
+      case "setCategory":
+        setSelectedCategories([command.payload]);
+        setSearchTerm("");
+        setVoiceMessage(`Filtering by ${command.payload}`);
+        break;
+      case "setSearchTerm":
+        setSearchTerm(command.payload);
+        setVoiceMessage(`Searching for ${command.payload}`);
+        break;
+      case "setMinAmount":
+        setMinAmount(command.payload);
+        setVoiceMessage(`Minimum amount set to ${command.payload}`);
+        break;
+      case "setMaxAmount":
+        setMaxAmount(command.payload);
+        setVoiceMessage(`Maximum amount set to ${command.payload}`);
+        break;
+      default:
+        setVoiceMessage("Try: 'today', 'this month', 'sort by amount', 'show food', 'clear filters'");
+    }
+  };
+
+  React.useEffect(() => {
+    const handleExternalVoice = (event) => {
+      if (event?.detail?.transcript) {
+        handleTransactionVoiceTranscript(event.detail.transcript);
+      }
+    };
+
+    window.addEventListener("transaction-voice-command", handleExternalVoice);
+    return () => {
+      window.removeEventListener("transaction-voice-command", handleExternalVoice);
+    };
+  }, [allCategories]);
+
+  const startVoiceSearch = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition ||
+      window.mozSpeechRecognition ||
+      window.msSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceMessage("Voice not supported");
+      return;
+    }
+
+    let recognition;
+    try {
+      recognition = new SpeechRecognition();
+    } catch {
+      setVoiceMessage("Voice not supported");
+      return;
+    }
+
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    setIsListening(true);
+    setVoiceMessage("Listening for transaction commands...");
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      const command = parseVoiceTransactionCommand(transcript);
+
+      switch (command.action) {
+        case "setDatePreset":
+          setDatePreset(command.payload);
+          setVoiceMessage(`Date filter set to ${command.payload.replace(/-/g, " ")}`);
+          break;
+        case "clearFilters":
+          clearFilters();
+          setVoiceMessage("Filters cleared");
+          break;
+        case "export":
+          exportToCSV();
+          setVoiceMessage("Exporting CSV");
+          break;
+        case "setSortBy":
+          setSortBy(command.payload);
+          setVoiceMessage(`Sorting by ${command.payload.replace(/-/g, " ")}`);
+          break;
+        case "setCategory":
+          setSelectedCategories([command.payload]);
+          setSearchTerm("");
+          setVoiceMessage(`Filtering by ${command.payload}`);
+          break;
+        case "setSearchTerm":
+          setSearchTerm(command.payload);
+          setVoiceMessage(`Searching for ${command.payload}`);
+          break;
+        case "setMinAmount":
+          setMinAmount(command.payload);
+          setVoiceMessage(`Minimum amount set to ${command.payload}`);
+          break;
+        case "setMaxAmount":
+          setMaxAmount(command.payload);
+          setVoiceMessage(`Maximum amount set to ${command.payload}`);
+          break;
+        default:
+          setVoiceMessage("Say search for groceries, show food, today, or clear filters");
+      }
+    };
+
+    recognition.onerror = (event) => {
+      setVoiceMessage(event?.error ? `Voice error: ${event.error}` : "Try again");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   const exportToCSV = () => {
   if (!filteredTransactions.length) return;
 
@@ -186,14 +427,24 @@ export default function Transaction() {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Filter Panel */}
       <div className="retro-card p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-[#FF6B00] text-lg font-black uppercase tracking-widest">Filters & Search</h2>
-          <button 
-            onClick={clearFilters}
-            className="text-xs text-gray-400 hover:text-[#FF6B00] uppercase tracking-wider font-bold transition-colors"
-          >
-            Clear All
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button 
+              onClick={clearFilters}
+              className="text-xs text-gray-400 hover:text-[#FF6B00] uppercase tracking-wider font-bold transition-colors"
+            >
+              Clear All
+            </button>
+            <button
+              type="button"
+              onClick={startVoiceSearch}
+              disabled={!voiceSupported || isListening}
+              className="text-xs bg-[#1F1F1F] border border-[#2a2a2a] px-3 py-2 rounded uppercase tracking-widest font-bold text-gray-300 hover:text-white hover:border-[#FF6B00] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isListening ? "LISTENING" : "VOICE SEARCH"}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -293,6 +544,11 @@ export default function Transaction() {
         <div className="mt-4 text-sm text-gray-400">
           Showing <span className="text-[#FF6B00] font-bold">{filteredTransactions.length}</span> of <span className="font-bold">{transactions.length}</span> transactions
         </div>
+        {voiceMessage && (
+          <div className="mt-2 text-sm text-gray-400">
+            <span className="font-bold text-[#FF6B00]">Voice:</span> {voiceMessage}
+          </div>
+        )}
       </div>
 
       {/* Transactions Table */}

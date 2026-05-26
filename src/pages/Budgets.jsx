@@ -14,13 +14,30 @@ export default function Budgets() {
   const [showAlert, setShowAlert] = React.useState(false);
   const [exceededCategories, setExceededCategories] = React.useState([]);
   const { transactions, currency } = React.useContext(DataContext);
-  const spending = transactions
-    ?.filter((t) => Number(t.Amount) < 0)
-    .reduce((acc, item) => {
-      const category = categorize(item.Description);
-      acc[category] = (acc[category] || 0) + Math.abs(Number(item.Amount));
-      return acc;
-    }, {});
+
+  const spending = React.useMemo(() => {
+    return transactions
+      ?.filter((t) => Number(t.Amount) < 0)
+      .reduce((acc, item) => {
+        const category = categorize(item.Description);
+        acc[category] = (acc[category] || 0) + Math.abs(Number(item.Amount));
+        return acc;
+      }, {});
+  }, [transactions]);
+
+  const categories = Object.keys(spending || {});
+
+  React.useEffect(() => {
+    const syncBudgets = (event) => {
+      setBudgets(event.detail || {});
+    };
+
+    window.addEventListener("budgets-updated", syncBudgets);
+
+    return () => {
+      window.removeEventListener("budgets-updated", syncBudgets);
+    };
+  }, []);
 
   // Save budgets to localStorage whenever they change
   React.useEffect(() => {
@@ -44,9 +61,7 @@ export default function Budgets() {
     if (exceeded.length > 0) {
       setShowAlert(true);
     }
-  }, [budgets, transactions, spending]);
-
-  const categories = Object.keys(spending || {});
+  }, [budgets, spending]);
 
   // Prepare comparison chart data
   const comparisonData = categories.map(category => ({
@@ -243,3 +258,6 @@ export default function Budgets() {
     </div>
   );
 }
+
+
+               

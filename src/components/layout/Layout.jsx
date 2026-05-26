@@ -1,5 +1,6 @@
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import VoiceBudgetAssistant from "../VoiceBudgetAssistant";
 import { Outlet } from "react-router-dom";
 
 export default function Layout() {
@@ -11,6 +12,7 @@ export default function Layout() {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <Outlet />
         </main>
+        <VoiceBudgetAssistant />
       </div> 
       <div className="drawer-side z-50">
         <label htmlFor="mobile-drawer" aria-label="close sidebar" className="drawer-overlay"></label> 

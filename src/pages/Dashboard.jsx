@@ -15,7 +15,6 @@ import {
 } from "recharts";
 import React from "react";
 import { parse, format } from "date-fns";
-import { TrendingUp, TrendingDown, PiggyBank } from "lucide-react";
 
 export default function Dashboard() {
   const { transactions, currency } = React.useContext(DataContext);
@@ -120,14 +119,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             <div className="retro-card p-6 flex flex-col justify-center">
-              <div className="flex items-center justify-between">
-                <h2 className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-2">
-                  Income
-                </h2>
-                <div className="p-2 bg-[#161616] border border-fin-border">
-                  <TrendingUp className="w-5 h-5 text-[#00C49F]" />
-                </div>
-              </div>
+              <h2 className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-2">
+                Income
+              </h2>
 
               <p className="text-[#00C49F] text-3xl font-black">
                 {currency.symbol}
@@ -136,14 +130,9 @@ export default function Dashboard() {
             </div>
 
             <div className="retro-card p-6 flex flex-col justify-center">
-              <div className="flex items-center justify-between">
-                <h2 className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-2">
-                  Spent
-                </h2>
-                <div className="p-2 bg-[#161616] border border-fin-border">
-                  <TrendingDown className="w-5 h-5 text-[#FF6B6B]" />
-                </div>
-              </div>
+              <h2 className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-2">
+                Spent
+              </h2>
 
               <p className="text-[#FF6B6B] text-3xl font-black">
                 {currency.symbol}
@@ -152,14 +141,9 @@ export default function Dashboard() {
             </div>
 
             <div className="retro-card p-6 flex flex-col justify-center">
-              <div className="flex items-center justify-between">
-                <h2 className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-2">
-                  Savings
-                </h2>
-                <div className="p-2 bg-[#161616] border border-fin-border">
-                  <PiggyBank className="w-5 h-5 text-[#0088FE]" />
-                </div>
-              </div>
+              <h2 className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-2">
+                Savings
+              </h2>
 
               <p className="text-[#0088FE] text-3xl font-black">
                 {currency.symbol}
