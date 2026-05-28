@@ -1,4 +1,5 @@
 import React from 'react'
+import { demoData } from '../data/demoData';
 export const DataContext = React.createContext();
 
 export const CURRENCIES = [
@@ -11,9 +12,26 @@ export const CURRENCIES = [
 ];
 
 export function AppContext({ children }) {
-  const [transactions, setTransactions] = React.useState(
-    JSON.parse(localStorage.getItem('transactions')) || []
+  // const [transactions, setTransactions] = React.useState(
+  //   JSON.parse(localStorage.getItem('transactions')) || []
+  // );
+
+  const [transactions, setTransactions] = React.useState(() => {
+
+  const savedTransactions =
+    localStorage.getItem('transactions');
+
+  if (savedTransactions) {
+    return JSON.parse(savedTransactions);
+  }
+
+  localStorage.setItem(
+    'transactions',
+    JSON.stringify(demoData)
   );
+
+  return demoData;
+});
   const [currency, setCurrency] = React.useState(
     JSON.parse(localStorage.getItem('currency')) || CURRENCIES[0]
   );
