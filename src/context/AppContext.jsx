@@ -45,9 +45,25 @@ export function AppContext({ children }) {
     return demoData;
   }
 });
-  const [currency, setCurrency] = React.useState(
-    JSON.parse(localStorage.getItem('currency')) || CURRENCIES[0]
-  );
+  // const [currency, setCurrency] = React.useState(
+  //   JSON.parse(localStorage.getItem('currency')) || CURRENCIES[0]
+  // );
+  const [currency, setCurrency] = React.useState(() => {
+
+  try {
+
+    const savedCurrency =
+      localStorage.getItem('currency');
+
+    return savedCurrency
+      ? JSON.parse(savedCurrency)
+      : CURRENCIES[0];
+
+  } catch {
+
+    return CURRENCIES[0];
+  }
+});
 
   const updateCurrency = (selectedCurrency) => {
     setCurrency(selectedCurrency);
