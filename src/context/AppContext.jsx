@@ -17,20 +17,33 @@ export function AppContext({ children }) {
   // );
 
   const [transactions, setTransactions] = React.useState(() => {
+  try {
 
-  const savedTransactions =
-    localStorage.getItem('transactions');
+    const saved =
+      localStorage.getItem('transactions');
 
-  if (savedTransactions) {
-    return JSON.parse(savedTransactions);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+
+    localStorage.setItem(
+      'transactions',
+      JSON.stringify(demoData)
+    );
+
+    return demoData;
+
+  } catch (error) {
+
+    console.error(error);
+
+    localStorage.setItem(
+      'transactions',
+      JSON.stringify(demoData)
+    );
+
+    return demoData;
   }
-
-  localStorage.setItem(
-    'transactions',
-    JSON.stringify(demoData)
-  );
-
-  return demoData;
 });
   const [currency, setCurrency] = React.useState(
     JSON.parse(localStorage.getItem('currency')) || CURRENCIES[0]
