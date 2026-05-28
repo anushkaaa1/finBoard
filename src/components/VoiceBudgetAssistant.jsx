@@ -13,6 +13,7 @@ export default function VoiceBudgetAssistant() {
   const [isListening, setIsListening] = React.useState(false);
   const [voiceMessage, setVoiceMessage] = React.useState("");
   const [voiceSupported, setVoiceSupported] = React.useState(false);
+  const [micPermission, setMicPermission] = React.useState(null);
 
   React.useEffect(() => {
     const SpeechRecognition =
@@ -21,7 +22,23 @@ export default function VoiceBudgetAssistant() {
       window.mozSpeechRecognition ||
       window.msSpeechRecognition;
 
-    setVoiceSupported(Boolean(SpeechRecognition));
+    setVoiceSupported(
+  typeof SpeechRecognition !== "undefined"
+);
+    // Check microphone permission status when available
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        navigator.permissions
+          .query({ name: "microphone" })
+          .then((status) => {
+            setMicPermission(status.state);
+            status.onchange = () => setMicPermission(status.state);
+          })
+          .catch(() => setMicPermission(null));
+      } catch {
+        setMicPermission(null);
+      }
+    }
   }, []);
 
   const categories = React.useMemo(() => {
@@ -122,12 +139,38 @@ export default function VoiceBudgetAssistant() {
     return { action: "unknown" };
   };
 
-  const startVoiceFill = () => {
+  const startVoiceFill = async () => {
     const SpeechRecognition =
       window.SpeechRecognition ||
       window.webkitSpeechRecognition ||
       window.mozSpeechRecognition ||
       window.msSpeechRecognition;
+    // If Permissions API reports denied, short-circuit with a helpful message
+    if (micPermission === "denied") {
+      setVoiceMessage(
+        "Voice error: Microphone permission denied. Open browser site settings and allow microphone."
+      );
+      setIsListening(false);
+      return;
+    }
+
+    // Request microphone permission explicitly to get clearer errors
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        console.error("getUserMedia error:", err);
+        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+          setVoiceMessage(
+            "Voice error: Microphone permission denied. Allow microphone in browser/site settings."
+          );
+        } else {
+          setVoiceMessage(`Voice error: ${err.name || err.message || "permission error"}`);
+        }
+        setIsListening(false);
+        return;
+      }
+    }
 
     if (!SpeechRecognition) {
       setVoiceMessage("Voice not supported");
@@ -221,19 +264,53 @@ export default function VoiceBudgetAssistant() {
           setVoiceMessage("Try: spent 500 on food");
         }
       }
-    };
-
-    recognition.onerror = (event) => {
-      setVoiceMessage(event?.error ? `Voice error: ${event.error}` : "Try again");
-    };
-
-    recognition.onend = () => {
       setIsListening(false);
     };
 
-    recognition.start();
-  };
+  recognition.onerror = (event) => {
+  console.error("SpeechRecognition error:", event);
 
+  const err = event?.error || "unknown";
+
+  switch (err) {
+    case "not-allowed":
+      setVoiceMessage("Microphone permission denied.");
+      break;
+
+    case "network":
+      setVoiceMessage("Network error occurred.");
+      break;
+
+    case "no-speech":
+      setVoiceMessage("No speech detected.");
+      break;
+
+    case "audio-capture":
+      setVoiceMessage("Microphone not found.");
+      break;
+
+    case "aborted":
+      setVoiceMessage("Voice recognition stopped.");
+      break;
+
+    default:
+      setVoiceMessage(`Voice error: ${err}`);
+  }
+
+  setIsListening(false);
+};
+
+recognition.onend = () => {
+  setIsListening(false);
+};
+
+try {
+  recognition.start();
+} catch (error) {
+  console.error(error);
+  setVoiceMessage("Unable to start voice recognition.");
+}
+  };
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
       {voiceMessage && (
@@ -245,6 +322,18 @@ export default function VoiceBudgetAssistant() {
       {!voiceSupported && (
         <div className="max-w-[260px] border border-[#FF6B6B]/40 bg-[#0A0A0A] px-4 py-3 text-right text-xs text-red-300 shadow-2xl">
           Voice works in Chrome/Edge on localhost or HTTPS.
+        </div>
+      )}
+
+      {micPermission === "denied" && (
+        <div className="max-w-[320px] border border-[#FF6B6B]/40 bg-[#0A0A0A] px-4 py-3 text-right text-xs text-red-300 shadow-2xl">
+          Microphone permission is blocked. Open the lock icon in the address bar → Site settings → Microphone → Allow, then reload the page.
+        </div>
+      )}
+
+      {!window.isSecureContext && (
+        <div className="max-w-[320px] border border-[#FF6B6B]/40 bg-[#0A0A0A] px-4 py-3 text-right text-xs text-red-300 shadow-2xl">
+          Voice requires HTTPS or localhost. Deploy to Netlify or run on localhost to use voice.
         </div>
       )}
 
