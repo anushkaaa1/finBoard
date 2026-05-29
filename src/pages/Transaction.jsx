@@ -132,6 +132,7 @@ export default function Transaction() {
   const [voiceSupported, setVoiceSupported] = React.useState(false);
   const [isListening, setIsListening] = React.useState(false);
   const [voiceMessage, setVoiceMessage] = React.useState("");
+  const [editingIndex, setEditingIndex] = React.useState(null);
 
   React.useEffect(() => {
     const SpeechRecognition =
@@ -354,6 +355,26 @@ export default function Transaction() {
     return { action: "setSearchTerm", payload: normalized };
   };
 
+  function exportToCSV() {
+    if (!filteredTransactions.length) return;
+    const headers = ["Date", "Description", "Amount", "Category"];
+    const rows = filteredTransactions.map((item) => [
+      item.Date,
+      item.Description,
+      item.Amount,
+      item.category || categorize(item.Description),
+    ]);
+    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "transactions.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const handleTransactionVoiceTranscript = (transcript) => {
     const command = parseVoiceTransactionCommand(transcript);
 
@@ -490,55 +511,23 @@ export default function Transaction() {
     recognition.start();
   };
 
-  const exportToCSV = () => {
-  if (!filteredTransactions.length) return;
-
-  const headers = ["Date", "Description", "Amount", "Category"];
-
-  const rows = filteredTransactions.map((item) => [
-    item.Date,
-    item.Description,
-    item.Amount,
-    categorize(item.Description),
-  ]);
-
-  const csvContent = [
-    headers.join(","),
-    ...rows.map((row) => row.join(",")),
-  ].join("\n");
-
-  const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
-
   const handleEdit = (filteredIdx) => {
     setEditingIndex(filteredIdx);
+  };
+
+  const handleDelete = (filteredIdx) => {
+    const originalIdx = originalIndices[filteredIdx];
+    showModal({
+      type: "confirm",
+      message: "Are you sure you want to delete this transaction?",
+      onConfirm: () => deleteTransaction(originalIdx),
+    });
   };
 
   const handleSaveEdit = (updatedTransaction) => {
     const originalIdx = originalIndices[editingIndex];
     updateTransaction(originalIdx, updatedTransaction);
     setEditingIndex(null);
-  };
-
-  const exportToCSV = () => {
-    if (!filteredTransactions.length) return;
-    const headers = ["Date", "Description", "Amount", "Category"];
-    const rows = filteredTransactions.map((item) => [
-      item.Date,
-      item.Description,
-      item.Amount,
-      item.category || categorize(item.Description),
-    ]);
-    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "transactions.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return transactions && transactions.length > 0 ? (
@@ -794,3 +783,4 @@ export default function Transaction() {
     </div>
   );
 }
+
