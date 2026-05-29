@@ -5,15 +5,6 @@ import { demoData } from "../data/demoData";
 import { format } from "date-fns";
 import { useModal } from "../context/ModalContext";
 
-const categoryIcons = {
-  Food: "🍔",
-  Travel: "✈️",
-  Shopping: "🛒",
-  Salary: "💰",
-  Bills: "📄",
-  Entertainment: "🎬",
-  Health: "🏥",
-};
 export default function CSVParser() {
   const {
     transactions,
@@ -83,7 +74,8 @@ export default function CSVParser() {
 
     if (
       !manualTransaction.Description ||
-      !manualTransaction.Amount
+      !manualTransaction.Amount ||
+      !manualTransaction.category
     ) {
       showModal({ type: 'alert', message: "Please fill in all fields" });
       return;
@@ -93,6 +85,8 @@ export default function CSVParser() {
       Date: manualTransaction.Date,
       Description: manualTransaction.Description,
       Amount: manualTransaction.Amount,
+      category: manualTransaction.category,
+      Currency: currency,
     };
 
     const updatedTransactions = [
@@ -111,6 +105,7 @@ export default function CSVParser() {
       Date: format(new Date(), "dd/MM/yyyy"),
       Description: "",
       Amount: "",
+      category:""
     });
 
     setSuccessMessage("Transaction added successfully!");
@@ -295,6 +290,27 @@ export default function CSVParser() {
                   className="retro-input p-3 w-full"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">
+                  Select Category
+                </label>
+                <select 
+                  className="retro-input p-3 w-full"
+                  onChange={(e) =>
+                    setManualTransaction({
+                      ...manualTransaction,
+                      category: e.target.value,
+                    })
+                  }
+                >
+                  {
+                    DEFAULTCATEGORIES.map((options, index)=>(
+                      <option key={index} value={options}>{options}</option>
+                    ))
+                  }
+                </select>
               </div>
 
               <div>
