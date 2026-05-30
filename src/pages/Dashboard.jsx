@@ -297,10 +297,11 @@ return (
                 type="date"
                 className="retro-input p-3 w-full"
                 onChange={(e) => {
+                  if (!e.target.value) return;
                   const [year, month, day] = e.target.value.split("-");
                   setForm({ ...form, Date: `${day}/${month}/${year}` });
                 }}
-                defaultValue={format(new Date(), "yyyy-MM-dd")}
+                value={form.Date.split("/").reverse().join("-")}
               />
               <input
                 type="text"
