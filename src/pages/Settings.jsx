@@ -5,12 +5,53 @@ import { demoData } from "../data/demoData";
 import { format } from "date-fns";
 import { useModal } from "../context/ModalContext";
 
-export default function CSVParser() {
+// =========================
+// REUSABLE SECTION COMPONENT
+// =========================
+const Section = ({ title, subtitle, children, right }) => (
+  <div className="w-full rounded-[24px] border border-[#222] bg-[#141414] p-6 md:p-8 transition-all duration-300 hover:border-[#FF6B00]/30 hover:shadow-[0_0_20px_rgba(255,107,0,0.05)]">
+
+    <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+
+      <div className="space-y-2">
+        <h2 className="text-[28px] font-black uppercase tracking-[0.22em] text-[#FF6B00]">
+          {title}
+        </h2>
+
+        {subtitle && (
+          <p className="text-sm text-gray-500">
+            {subtitle}
+          </p>
+        )}
+      </div>
+
+      {right}
+    </div>
+
+    {children}
+  </div>
+);
+
+// Category options matching the app's category system
+const CATEGORIES = [
+  "Food",
+  "Shopping",
+  "Bills",
+  "Health",
+  "Transport",
+  "Entertainment",
+  "Education",
+  "Travel",
+  "Other",
+];
+
+export default function Settings() {
   const {
     transactions,
     setTransactions,
     currency,
     updateCurrency,
+    addTransaction
   } = useContext(DataContext);
 
   const { showModal } = useModal();
@@ -22,20 +63,21 @@ export default function CSVParser() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Manual entry form state
   const [manualTransaction, setManualTransaction] = useState({
     Date: format(new Date(), "dd/MM/yyyy"),
     Description: "",
     Amount: "",
+    Category: "Other",
   });
 
+  // =========================
+  // CSV IMPORT
+  // =========================
   const handleFile = (e) => {
     const file = e.target.files[0];
-
     if (!file) return;
 
     setLoading(true);
-    setSuccessMessage("");
 
     Papa.parse(file, {
       header: true,
@@ -54,30 +96,36 @@ export default function CSVParser() {
 
           setLoading(false);
 
-          setSuccessMessage("Data loaded successfully!");
+        setTransactions(updatedData);
+        localStorage.setItem("transactions", JSON.stringify(updatedData));
 
-          setTimeout(() => {
-            setSuccessMessage("");
-          }, 3000);
-        }, 1200);
+        setLoading(false);
+        setSuccessMessage("CSV Imported Successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
       },
 
       error: () => {
         setLoading(false);
-        showModal({ type: 'alert', message: "Failed to parse CSV file." });
+        showModal({
+          type: "alert",
+          message: "Failed to parse CSV file.",
+        });
       },
     });
   };
 
+  // =========================
+  // MANUAL ENTRY
+  // =========================
   const handleManualSubmit = (e) => {
     e.preventDefault();
 
     if (
+      !manualTransaction.Date ||
       !manualTransaction.Description ||
-      !manualTransaction.Amount ||
-      !manualTransaction.category
+      !manualTransaction.Amount
     ) {
-      showModal({ type: 'alert', message: "Please fill in all fields" });
+      showModal({ type: "alert", message: "Please fill all fields" });
       return;
     }
 
@@ -89,93 +137,44 @@ export default function CSVParser() {
       Currency: currency,
     };
 
-    const updatedTransactions = [
-      ...(transactions || []),
-      newTransaction,
-    ];
-
-    setTransactions(updatedTransactions);
-
-    localStorage.setItem(
-      "transactions",
-      JSON.stringify(updatedTransactions)
-    );
+    addTransaction(newTransaction);
 
     setManualTransaction({
       Date: format(new Date(), "dd/MM/yyyy"),
       Description: "",
       Amount: "",
-      category:""
+      Category: "Other",
     });
 
-    setSuccessMessage("Transaction added successfully!");
-
-    setTimeout(() => {
-      setSuccessMessage("");
-    }, 3000);
-  };
-
-  const handleDateChange = (e) => {
-    const dateValue = e.target.value;
-
-    if (dateValue) {
-      const [year, month, day] = dateValue.split("-");
-
-      setManualTransaction({
-        ...manualTransaction,
-        Date: `${day}/${month}/${year}`,
-      });
-    }
-  };
-
-  const getCurrentDateForInput = () => {
-    const [day, month, year] =
-      manualTransaction.Date.split("/");
-
-    return `${year}-${month}-${day}`;
+    setSuccessMessage("Transaction Added!");
+    setTimeout(() => setSuccessMessage(""), 3000);
   };
 
   const clearAllData = () => {
     showModal({
-      type: 'confirm',
-      message: "Are you sure you want to delete all transactions? This cannot be undone.",
+      type: "confirm",
+      message: "Are you sure you want to clear all data?",
       onConfirm: () => {
         setTransactions([]);
-        setData([]);
-
         localStorage.removeItem("transactions");
-
-        setSuccessMessage(
-          "All transactions deleted successfully!"
-        );
-
-        setTimeout(() => {
-          setSuccessMessage("");
-        }, 3000);
-      }
+        setSuccessMessage("All Data Cleared!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      },
     });
   };
 
   return (
-    <div className="max-w-4xl animate-in fade-in duration-500 space-y-6">
+    <div className="w-full space-y-6">
 
-      {/* SUCCESS MESSAGE */}
       {successMessage && (
-        <div className="alert alert-success shadow-lg">
-          <span>{successMessage}</span>
+        <div className="rounded-2xl border border-[#FF6B00]/30 bg-[#111] px-5 py-4 text-sm font-bold tracking-wide text-[#FF6B00] uppercase">
+          {successMessage}
         </div>
       )}
 
-      {/* LOADING SPINNER */}
       {loading && (
-        <div className="flex justify-center">
-          <div className="flex items-center gap-3 bg-[#111111] border border-[#1F1F1F] px-6 py-4">
-            <span className="loading loading-spinner loading-md text-[#FF6B00]"></span>
-
-            <span className="text-gray-300 font-semibold uppercase tracking-wider text-sm">
-              Parsing CSV file...
-            </span>
-          </div>
+        <div className="flex justify-center py-2">
+          <span className="loading loading-spinner loading-lg text-[#FF6B00]" />
         </div>
       )}
 
@@ -205,6 +204,15 @@ export default function CSVParser() {
           <div className="hidden md:flex items-center text-gray-600 font-black uppercase text-sm">
             Or
           </div>
+        }
+      >
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFile}
+            className="file-input h-[48px] w-full rounded-xl border border-[#222] bg-[#111] text-white"
+          />
 
           <div className="w-full md:w-auto md:mt-7">
             <button
@@ -230,56 +238,85 @@ export default function CSVParser() {
             </button>
           </div>
         </div>
-      </div>
+      </Section>
 
       {/* MANUAL ENTRY */}
-      <div className="retro-card p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[#FF6B00] text-lg font-black uppercase tracking-widest">
-            Manual Entry
-          </h2>
-
+      <Section
+        title="Manual Entry"
+        subtitle="Add transactions manually"
+        right={
           <button
-            onClick={() =>
-              setShowManualEntry(!showManualEntry)
-            }
-            className="text-sm text-gray-400 hover:text-[#FF6B00] uppercase tracking-wider font-bold transition-colors"
+            onClick={() => setShowManualEntry(!showManualEntry)}
+            className="rounded-xl border border-[#222] px-5 py-2 text-sm font-semibold uppercase text-gray-400"
           >
-            {showManualEntry
-              ? "Hide Form"
-              : "Add Transaction"}
+            {showManualEntry ? "Hide Form" : "Show Form"}
           </button>
-        </div>
-
+        }
+      >
         {showManualEntry && (
-          <form
-            onSubmit={handleManualSubmit}
-            className="space-y-4"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleManualSubmit} className="space-y-6">
 
-              <div>
-                <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+
+              {/* DATE — Fix: no UTC parsing, split directly */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-gray-500">
                   Date
                 </label>
-
                 <input
                   type="date"
-                  value={getCurrentDateForInput()}
-                  onChange={handleDateChange}
-                  className="retro-input p-3 w-full"
                   required
+                  // Fix 1: avoid new Date() UTC shift — split dd/MM/yyyy directly to yyyy-MM-dd
+                  value={
+                    manualTransaction.Date
+                      ? manualTransaction.Date.split("/").reverse().join("-")
+                      : ""
+                  }
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    // Fix 2: parse parts directly, no new Date() to avoid UTC shift
+                    const [year, month, day] = e.target.value.split("-");
+                    setManualTransaction({
+                      ...manualTransaction,
+                      Date: `${day}/${month}/${year}`,
+                    });
+                  }}
+                  className="w-full rounded-xl border border-[#222] bg-[#111] p-4 text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">
+              {/* CATEGORY — Fix: added back, was missing */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Category
+                </label>
+                <select
+                  value={manualTransaction.Category}
+                  onChange={(e) =>
+                    setManualTransaction({
+                      ...manualTransaction,
+                      Category: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-xl border border-[#222] bg-[#111] p-4 text-white"
+                >
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-gray-500">
                   Description
                 </label>
-
                 <input
                   type="text"
-                  placeholder="e.g., Swiggy Food Order"
+                  required
+                  placeholder="Enter description"
                   value={manualTransaction.Description}
                   onChange={(e) =>
                     setManualTransaction({
@@ -287,39 +324,18 @@ export default function CSVParser() {
                       Description: e.target.value,
                     })
                   }
-                  className="retro-input p-3 w-full"
-                  required
+                  className="w-full rounded-xl border border-[#222] bg-[#111] p-4 text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">
-                  Select Category
-                </label>
-                <select 
-                  className="retro-input p-3 w-full"
-                  onChange={(e) =>
-                    setManualTransaction({
-                      ...manualTransaction,
-                      category: e.target.value,
-                    })
-                  }
-                >
-                  {
-                    DEFAULTCATEGORIES.map((options, index)=>(
-                      <option key={index} value={options}>{options}</option>
-                    ))
-                  }
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">
+              {/* AMOUNT — Fix: step="0.01" added back for decimal support */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-gray-500">
                   Amount
                 </label>
-
                 <input
                   type="number"
+                  required
                   step="0.01"
                   placeholder="e.g., -450 or 5000"
                   value={manualTransaction.Amount}
@@ -329,16 +345,15 @@ export default function CSVParser() {
                       Amount: e.target.value,
                     })
                   }
-                  className="retro-input p-3 w-full"
-                  required
+                  className="w-full rounded-xl border border-[#222] bg-[#111] p-4 text-white"
                 />
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 type="submit"
-                className="retro-btn"
+                className="rounded-xl bg-[#FF6B00] px-7 py-3 font-black uppercase text-black"
               >
                 Add Transaction
               </button>
@@ -346,95 +361,38 @@ export default function CSVParser() {
               <button
                 type="button"
                 onClick={clearAllData}
-                className="px-6 py-3 bg-red-500 text-white font-bold uppercase tracking-wider hover:bg-red-600 transition-colors"
+                className="rounded-xl border border-red-500/40 px-7 py-3 font-black uppercase text-red-400"
               >
-                Clear All Data
+                Clear Data
               </button>
             </div>
           </form>
         )}
-      </div>
+      </Section>
 
-      {/* CURRENCY SETTINGS */}
-      <div className="retro-card p-8">
-        <h2 className="text-[#FF6B00] text-lg font-black uppercase tracking-widest mb-6">
-          Currency Settings
-        </h2>
+      {/* CURRENCY */}
+      <Section title="Currency Settings">
+        <select
+          value={currency?.code || ""}
+          onChange={(e) => {
+            const selected = CURRENCIES.find((c) => c.code === e.target.value);
+            if (selected) updateCurrency(selected);
+          }}
+          className="w-full rounded-xl border border-[#222] bg-[#111] p-4 text-white"
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.symbol} — {c.name}
+            </option>
+          ))}
+        </select>
+      </Section>
 
-        <div className="max-w-sm">
-          <label className="block text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">
-            Select Currency
-          </label>
-
-          <select
-            value={currency.code}
-            onChange={(e) => {
-              const selected = CURRENCIES.find(
-                (c) => c.code === e.target.value
-              );
-
-              if (selected) {
-                updateCurrency(selected);
-              }
-            }}
-            className="retro-input p-3 w-full"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.symbol} — {c.name} ({c.code})
-              </option>
-            ))}
-          </select>
-
-          <p className="text-xs text-gray-400 mt-3">
-            Currently using:
-            <span className="text-[#FF6B00] font-bold ml-1">
-              {currency.symbol} {currency.name}
-            </span>
-          </p>
-        </div>
-      </div>
-
-      {/* DATA MANAGEMENT */}
-      {transactions && transactions.length > 0 && (
-        <div className="retro-card p-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-[#FF6B00] text-lg font-black uppercase tracking-widest">
-                Data Management
-              </h2>
-
-              <p className="text-gray-400 text-sm mt-2">
-                Total Transactions:
-                <span className="text-white font-bold ml-1">
-                  {transactions.length}
-                </span>
-              </p>
-            </div>
-
-            <button
-              onClick={clearAllData}
-              className="px-4 py-2 bg-[#FF6B6B] text-white font-bold uppercase tracking-wider text-sm hover:bg-[#FF5252] transition-colors"
-            >
-              Clear All Data
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* RAW DATA */}
-      {data && data.length > 0 && (
-        <div className="retro-card p-8">
-          <h2 className="text-[#FF6B00] text-lg font-black uppercase tracking-widest mb-6">
-            Raw Parsed Data
-          </h2>
-
-          <div className="bg-[#0A0A0A] border border-[#1F1F1F] p-4 max-h-96 overflow-y-auto">
-            <pre className="text-xs text-gray-400 font-mono">
-              {JSON.stringify(data, null, 2)}
-            </pre>
-          </div>
-        </div>
+      {/* OVERVIEW */}
+      {transactions?.length > 0 && (
+        <Section title="Data Overview">
+          Total Transactions: {transactions.length}
+        </Section>
       )}
     </div>
   );
